@@ -13,22 +13,43 @@ namespace Musiglu
       {
          Console.WriteLine("Musiglu ver. 0.1");
 
-         if (args.Length <= 1)
+         if (args.Length > 0 && args[0] == "-a")
+         {
+            var input = args.Length > 0 ? args[1] : ".";
+            var dirs = Directory.GetDirectories(input).ToList();
+            dirs.ForEach(MergeFiles);
+            dirs.Select(x => x + ".png").ToList().ForEach(x => Split(x, GetPageWidth(args)));
+         }
+         else if (args.Length > 0 && args[0] == "-g")
          {
             var input = args.Length > 0 ? args[0] : ".";
             Directory.GetDirectories(input).ToList().ForEach(MergeFiles);
          }
-         else if (args[0] == "-s")
+         else if (args.Length > 0 && args[0] == "-s")
          {
-            //musiglu -s "in path" 
-            Split(args[1]);
+            Split(args[1], GetPageWidth(args));
+         }
+         else
+         {
+            Console.WriteLine("musiglue -g <dir> // merge images in subdirectories");
+            Console.WriteLine("musiglue -g \"C:\\dir\"");
+            Console.WriteLine("musiglue -g .");
+            Console.WriteLine("musiglue -g // in current dir");
+            Console.WriteLine("\nmusiglue -s <filename> -r1100// split single image");
+            Console.WriteLine("\nmusiglue -a <dir> -r1100// merge and split by dir names");
+            Console.WriteLine("-r<width> // -r is optional, default is 1100");
          }
       }
 
-      private static void Split(string file)
+      private static int GetPageWidth(string[] args)
+      {
+         var sizeArg = args.FirstOrDefault(x => x.StartsWith("-r"));
+         return string.IsNullOrEmpty(sizeArg) ? 1100 : int.Parse(sizeArg[2..]);
+      }
+
+      private static void Split(string file, int pageWidth = 1100)
       {
          using var srcBitmap = Bitmap.FromFile(file) as Bitmap;
-         const int pageWidth = 1350;
          const int rowsPerPage = 10;
 
          var measures = DetectMeasures(srcBitmap);
